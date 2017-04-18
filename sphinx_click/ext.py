@@ -183,6 +183,7 @@ class ClickDirective(Directive):
     option_spec = {
         'prog': directives.unchanged_required,
         'show-nested': directives.flag,
+        'subcommand': directives.unchanged
     }
 
     def _load_module(self, module_path):
@@ -280,6 +281,17 @@ class ClickDirective(Directive):
             raise self.error(':prog: must be specified')
 
         show_nested = 'show-nested' in self.options
+        
+        if 'subcommand' in self.options:
+            subcommand = self.options['subcommand']
+            if show_nested:
+                raise ValueError("Can't show nested subcommands")
+            modpath, _ = self.arguments[0].split(':', 1)
+            scmd = self._load_module(':'.join([modpath, subcommand]))
+
+            ctx = click.Context(command, info_name=prog_name, parent=None)
+            return self._generate_nodes(subcommand, scmd, ctx, show_nested)
+
 
         return self._generate_nodes(prog_name, command, None, show_nested)
 
